@@ -1,6 +1,6 @@
 // API keys
-const GEMINI_API_KEY = "AIzaSyBvxdAvVecjqaJ7BGNYksCTo9A2lsZQ0vg";
-const SERP_API_KEY = "f40fd201a146c3fd5f8809255aad6c87ea7f2200345dcd4b8d4ad514bd32dc67";
+const GEMINI_API_KEY = "AIzaSyBvxdAvVecjqaJ7BGNYksCTo9A2lsZQ0vggg";
+const SERP_API_KEY = "f40fd201a146c3fd5f8809255aad6c87ea7f2200345dcd4b8dg4ad514bd32dc67";
 
 document.addEventListener('DOMContentLoaded', function() {
     const travelForm = document.getElementById('travel-form');

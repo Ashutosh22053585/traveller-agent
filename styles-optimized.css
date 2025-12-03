@@ -1,0 +1,369 @@
+:root {
+    --primary-color: #00f3ff;
+    --secondary-color: #bc13fe;
+    --bg-dark: #05050a;
+    --glass-bg: rgba(10, 10, 20, 0.6);
+    --glass-border: rgba(0, 243, 255, 0.2);
+    --text-main: #e0e0e0;
+    --text-muted: #a0a0a0;
+    --font-heading: 'Orbitron', sans-serif;
+    --font-body: 'Rajdhani', sans-serif;
+    --neon-glow: 0 0 10px rgba(0, 243, 255, 0.5), 0 0 20px rgba(0, 243, 255, 0.3);
+    --neon-glow-secondary: 0 0 10px rgba(188, 19, 254, 0.5), 0 0 20px rgba(188, 19, 254, 0.3);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Canvas Background */
+#bg-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+}
+
+/* Holographic Glass Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    perspective: 1000px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Header */
+.advanced-header {
+    text-align: center;
+    margin-bottom: 60px;
+    padding: 50px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.advanced-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    0% {
+        left: -100%;
+    }
+
+    20% {
+        left: 100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+.advanced-header h1 {
+    font-family: var(--font-heading);
+    font-size: 4rem;
+    text-transform: uppercase;
+    letter-spacing: 6px;
+    background: linear-gradient(90deg, var(--primary-color), #fff, var(--secondary-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+    margin-bottom: 10px;
+}
+
+.advanced-header p {
+    font-size: 1.3rem;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+}
+
+/* Cyberpunk Form */
+.form-container {
+    background: rgba(5, 5, 10, 0.7);
+    backdrop-filter: blur(30px);
+    border: 1px solid var(--glass-border);
+    border-radius: 0;
+    /* Cyberpunk sharp edges */
+    padding: 50px;
+    position: relative;
+    clip-path: polygon(0 0,
+            100% 0,
+            100% calc(100% - 30px),
+            calc(100% - 30px) 100%,
+            0 100%);
+}
+
+/* Corner Accents */
+.form-container::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, transparent 50%, var(--primary-color) 50%);
+}
+
+.form-group {
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+label {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Cyberpunk Inputs */
+input[type="text"],
+input[type="number"],
+input[type="date"] {
+    width: 100%;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border: none;
+    border-bottom: 2px solid #333;
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    outline: none;
+    background: rgba(0, 243, 255, 0.05);
+    border-bottom-color: var(--primary-color);
+    box-shadow: 0 10px 20px -10px rgba(0, 243, 255, 0.2);
+}
+
+/* Glitch Button */
+.btn-submit {
+    width: 100%;
+    padding: 20px;
+    background: var(--primary-color);
+    color: #000;
+    font-family: var(--font-heading);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    transition: all 0.2s;
+}
+
+.btn-submit:hover {
+    background: #fff;
+    box-shadow: 0 0 30px var(--primary-color);
+    text-shadow: 2px 0 var(--secondary-color), -2px 0 var(--primary-color);
+}
+
+.btn-submit:active {
+    transform: scale(0.98);
+}
+
+/* Results Section */
+.results-container {
+    display: none;
+    margin-top: 50px;
+}
+
+.results-container.active {
+    display: block;
+    animation: slideUp 0.8s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.plan-header {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--secondary-color);
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.plan-header h2 {
+    font-family: var(--font-heading);
+    color: var(--secondary-color);
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.summary-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 15px;
+    padding: 10px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.summary-item i {
+    color: var(--primary-color);
+}
+
+/* Cards */
+.hotel-cards,
+.flight-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.hotel-card,
+.flight-card {
+    background: rgba(10, 10, 15, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 25px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.hotel-card:hover,
+.flight-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-5px);
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+}
+
+.hotel-card::before,
+.flight-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--primary-color);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.hotel-card:hover::before,
+.flight-card:hover::before {
+    transform: scaleY(1);
+}
+
+.hotel-name,
+.airline {
+    font-family: var(--font-heading);
+    color: var(--primary-color);
+    font-size: 1.3rem;
+    margin-bottom: 5px;
+}
+
+.hotel-price,
+.flight-price {
+    color: var(--secondary-color);
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* Loading */
+.loading {
+    display: none;
+    text-align: center;
+    padding: 50px;
+}
+
+.loading.active {
+    display: block;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid transparent;
+    border-top-color: var(--primary-color);
+    border-right-color: var(--secondary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .advanced-header h1 {
+        font-size: 2.5rem;
+    }
+}
+
+/* Checkbox */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+}
+
+.checkbox-group input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary-color);
+}

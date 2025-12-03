@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Planner AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles-optimized.css">
+</head>
+
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <!-- Simplified background elements -->
+    <div class="bg-gradient"></div>
+    <div class="container">
+        <header class="advanced-header">
+            <div class="header-bg"></div>
+            <h1><i class="fas fa-space-shuttle"></i> Travel Planner AI</h1>
+            <p>Your AI-powered travel companion, powered by <span class="gemini-highlight"><i class="fas fa-brain"></i>
+                    Gemini 1.5-flash</span></p>
+        </header>
+
+        <div class="form-container">
+            <form id="travel-form">
+                <div class="form-group">
+                    <label for="source"><i class="fas fa-map-marker-alt"></i> Source Location:</label>
+                    <input type="text" id="source" name="source" required placeholder="Where are you starting from?">
+                </div>
+
+                <div class="form-group">
+                    <label for="destination"><i class="fas fa-map-pin"></i> Destination:</label>
+                    <input type="text" id="destination" name="destination" required
+                        placeholder="Where do you want to go?">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="start-date"><i class="far fa-calendar-alt"></i> Start Date:</label>
+                        <input type="date" id="start-date" name="start-date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="end-date"><i class="far fa-calendar-check"></i> End Date:</label>
+                        <input type="date" id="end-date" name="end-date" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="budget"><i class="fas fa-dollar-sign"></i> Budget (USD):</label>
+                    <input type="number" id="budget" name="budget" required min="1" placeholder="Your travel budget">
+                </div>
+
+                <div class="form-group">
+                    <label for="interests"><i class="fas fa-heart"></i> Interests:</label>
+                    <input type="text" id="interests" name="interests" required
+                        placeholder="e.g., history, food, adventure, nature">
+                </div>
+
+                <div class="form-group">
+                    <label for="travelers"><i class="fas fa-users"></i> Number of Travelers:</label>
+                    <input type="number" id="travelers" name="travelers" required min="1" value="1">
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="include-flights" name="include-flights" checked>
+                    <label for="include-flights"><i class="fas fa-plane"></i> Include flight details and prices</label>
+                </div>
+
+                <button type="submit" class="btn-submit"><i class="fas fa-magic"></i> Generate Travel Plan</button>
+            </form>
+        </div>
+
+        <div class="results-container" id="results">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Creating your personalized travel experience...</p>
+                <p class="loading-subtitle">Exploring destinations, finding the best options just for you</p>
+            </div>
+            <div id="plan-result"></div>
+        </div>
+    </div>
+
+    <footer class="advanced-footer">
+        <div class="footer-bg"></div>
+        <p>&copy; 2024 Travel Planner AI | <i class="fas fa-brain"></i> Powered by <span class="gemini-highlight">Gemini
+                1.5-flash</span></p>
+        <p class="footer-tagline">Your AI travel companion for unforgettable journeys</p>
+    </footer>
+    <button id="scrollTopBtn" title="Go to top"><i class="fas fa-arrow-up"></i></button>
+
+    <script src="js/api-handler.js?v=7"></script>
+    <script src="js/form-handler-optimized.js?v=7"></script>
+    <script src="js/background-animation.js"></script>
+
+</body>
+
+</html>

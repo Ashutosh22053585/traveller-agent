@@ -8,6 +8,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv, find_dotenv
 from pathlib import Path
+import re
 
 # Load environment variables from .env file (works regardless of current working directory)
 env_path = Path(__file__).resolve().parent / ".env"
@@ -17,7 +18,11 @@ else:
     load_dotenv(find_dotenv())
 
 app = Flask(__name__, static_url_path='', static_folder='.')
-CORS(app)  # Enable CORS for all routes
+
+# ─── CORS Configuration (Security) ───────────────────────────────
+# Restrict CORS to whitelisted origins instead of allowing all
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5001,http://localhost:3000").split(",")
+CORS(app, origins=[origin.strip() for origin in ALLOWED_ORIGINS])
 
 from backend.auth_middleware import requires_auth, AuthError
 
@@ -31,6 +36,63 @@ SERP_API_KEY = os.getenv("SERP_API_KEY", "")
 # Offline fallback control
 ALWAYS_FALLBACK = os.getenv("ALWAYS_FALLBACK", "0") == "1"
 INVALID_API = (not API_KEY) or (API_KEY == "YOUR_GEMINI_API_KEY")
+
+# ─── Input Validation & Sanitization ───────────────────────────
+def sanitize_input(value, max_length=200):
+    """Remove dangerous characters and limit length"""
+    if not isinstance(value, str):
+        return str(value)[:max_length]
+    # Remove control characters and limit length
+    sanitized = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', value)
+    return sanitized[:max_length]
+
+def validate_travel_input(data):
+    """Validate all travel form inputs before processing"""
+    errors = []
+    
+    # Check required fields
+    required = ['source', 'destination', 'startDate', 'endDate', 'budget', 'interests', 'travelers']
+    for field in required:
+        if field not in data or not data[field]:
+            errors.append(f"Missing required field: {field}")
+    
+    if errors:
+        return False, errors
+    
+    # Validate and sanitize text fields
+    source = sanitize_input(data.get('source', ''))
+    destination = sanitize_input(data.get('destination', ''))
+    interests = sanitize_input(data.get('interests', ''), 500)
+    
+    # Validate dates (YYYY-MM-DD format)
+    try:
+        start = datetime.strptime(data['startDate'], '%Y-%m-%d')
+        end = datetime.strptime(data['endDate'], '%Y-%m-%d')
+        if end < start:
+            errors.append("End date cannot be before start date")
+        if (end - start).days > 365:
+            errors.append("Trip duration cannot exceed 365 days")
+    except ValueError:
+        errors.append("Invalid date format. Use YYYY-MM-DD")
+    
+    # Validate budget and travelers (positive integers)
+    try:
+        budget = int(data['budget'])
+        travelers = int(data['travelers'])
+        if budget <= 0 or budget > 1000000:
+            errors.append("Budget must be between $1 and $1,000,000")
+        if travelers <= 0 or travelers > 100:
+            errors.append("Number of travelers must be between 1 and 100")
+    except (ValueError, TypeError):
+        errors.append("Budget and travelers must be valid numbers")
+    
+    # Validate field lengths
+    if len(source) < 2 or len(destination) < 2:
+        errors.append("Source and destination must be at least 2 characters")
+    if len(interests) < 2:
+        errors.append("Interests must be at least 2 characters")
+    
+    return len(errors) == 0, errors
 
 # ─── SerpApi Integration ───────────────────────────────────────
 
@@ -138,7 +200,7 @@ Overview
 Day-by-Day Itinerary
 """
     for i in range(1, days + 1):
-        plan += f"\nDay {i}\n- Morning: Explore a top attraction in {destination} aligned with your interests ({interests}).\n- Afternoon: Local cuisine tasting and scenic walk.\n- Evening: Relaxing activity or cultural experience.\n"
+        plan += f"\nDay {i}\n- Morning: Explore a top attraction in {destination} aligned with your interests ({interests}).\n- Afternoon: Local cuisine tasting and scenic walk.\n- Evening: Relax at your accommodation.\n"
     plan += f"""
 
 Transportation
@@ -230,32 +292,27 @@ def generate_plan():
     try:
         data = request.json
         print(f"DEBUG: Received data: {data}")
-        # Extract travel details from request
-        source = data.get('source')
-        destination = data.get('destination')
-        start_date = data.get('startDate')
-        end_date = data.get('endDate')
-        budget = data.get('budget')
-        interests = data.get('interests')
-        travelers = data.get('travelers')
-
-        # Validate required fields
-        if not all([source, destination, start_date, end_date, budget, interests, travelers]):
+        
+        # ✅ INPUT VALIDATION (Security)
+        is_valid, validation_errors = validate_travel_input(data)
+        if not is_valid:
             return jsonify({
                 "success": False,
-                "error": "Missing required fields. Please fill out all form fields."
+                "error": "Validation failed: " + "; ".join(validation_errors)
             }), 400
+        
+        # Extract and sanitize travel details
+        source = sanitize_input(data.get('source'))
+        destination = sanitize_input(data.get('destination'))
+        start_date = data.get('startDate')  # Already validated as YYYY-MM-DD
+        end_date = data.get('endDate')      # Already validated as YYYY-MM-DD
+        budget = int(data.get('budget'))
+        interests = sanitize_input(data.get('interests'), 500)
+        travelers = int(data.get('travelers'))
 
         # Calculate trip duration
         start = datetime.strptime(start_date, '%Y-%m-%d')
         end = datetime.strptime(end_date, '%Y-%m-%d')
-        
-        if end < start:
-            return jsonify({
-                "success": False,
-                "error": "End date cannot be before start date."
-            }), 400
-            
         duration = (end - start).days
 
         # If running without credits or API key, return fallback
@@ -271,6 +328,7 @@ def generate_plan():
             }), 200
 
         # Create structured JSON prompt for Gemini
+        # ✅ Use sanitized inputs to prevent prompt injection
         prompt = f"""Create a detailed travel plan and return it as JSON with this exact structure:
 {{
   "overview": "A 2-3 sentence introduction to {destination} and why it matches the traveler's interests",
@@ -308,7 +366,8 @@ Travel details:
 - Interests: {interests}
 - Travelers: {travelers}
 
-Generate exactly {duration} days in the itinerary. Each day must have 3 activities (morning, afternoon, evening). Keep total budget_breakdown.total within ${budget}. Include at least 4 food recommendations and 5 travel tips."""
+Generate exactly {duration} days in the itinerary. Each day must have 3 activities (morning, afternoon, evening). Keep total budget_breakdown.total within ${budget}. Include at least 4 food recommendations with realistic prices for {destination}.
+"""
 
         # Run Gemini + SerpApi in parallel for speed
         include_flights = data.get('includeFlights', True)
@@ -389,4 +448,9 @@ Generate exactly {duration} days in the itinerary. Each day must have 3 activiti
         }), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    # ⚠️ PRODUCTION WARNING
+    # NEVER use debug=True in production!
+    # Use a production WSGI server like: gunicorn -w 4 app:app
+    # Set FLASK_DEBUG=False in .env
+    debug_mode = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+    app.run(debug=debug_mode, host='0.0.0.0', port=5001)

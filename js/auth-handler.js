@@ -1,6 +1,7 @@
 /**
  * Firebase Auth Handler for Travel Planner AI
  * Manages authentication lifecycle and token storage
+ * ✅ SECURITY: Debug token bypass REMOVED
  */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
@@ -92,10 +93,9 @@ class AuthHandler {
         }
     }
 
-    skipLogin() {
-        localStorage.setItem('debugSkipAuth', 'true');
-        window.location.href = 'index.html';
-    }
+    // ⚠️ DEBUG SKIP LOGIN REMOVED FOR SECURITY
+    // skipLogin() has been removed to prevent unauthenticated access
+    // All requests now require valid Firebase authentication
 
     async phoneLogin() {
         alert("Phone login feature is ready to be configured. Please set up RecaptchaVerifier in your Firebase console.");
@@ -103,6 +103,7 @@ class AuthHandler {
 
     async logout() {
         try {
+            // Clear any debug flags on logout
             localStorage.removeItem('debugSkipAuth');
             await signOut(this.auth);
             window.location.href = 'login.html';
@@ -112,7 +113,8 @@ class AuthHandler {
     }
 
     async getToken() {
-        if (localStorage.getItem('debugSkipAuth')) return "debug-token";
+        // ✅ SECURITY: No debug token fallback
+        // Always require legitimate Firebase token
         if (!this.user) return null;
         try {
             return await this.user.getIdToken();
@@ -123,7 +125,8 @@ class AuthHandler {
     }
 
     isAuthenticated() {
-        return !!this.user || localStorage.getItem('debugSkipAuth') === 'true';
+        // ✅ SECURITY: Only check Firebase user, no debug bypass
+        return !!this.user;
     }
 
     updateUI() {

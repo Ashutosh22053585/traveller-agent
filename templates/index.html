@@ -1,101 +1,263 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Travel Planner AI</title>
+    <title>VOYA | AI-Powered Travel Planner</title>
+    <meta name="description" content="Plan your dream trip with AI. VOYA generates personalized travel itineraries, flight options, and hotel recommendations in seconds.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css?v=20">
 </head>
+
 <body>
-    <div class="container">
-        <header class="advanced-header">
-            <div class="header-bg"></div>
-            <h1><i class="fas fa-globe-americas"></i> Travel Planner AI</h1>
-            <p>Your AI-powered travel companion, powered by <span class="gemini-highlight"><i class="fas fa-brain"></i> Gemini 1.5-flash</span></p>
-        </header>
+    <!-- ═══════════════════════════════════════════
+         FULL-SCREEN VIDEO BACKGROUND
+    ═══════════════════════════════════════════ -->
+    <video id="bg-video" autoplay muted loop playsinline>
+        <source src="https://videos.pexels.com/video-files/1409899/1409899-uhd_2560_1440_25fps.mp4" type="video/mp4">
+    </video>
 
-        <div class="form-container">
-            <form id="travel-form">
-                <div class="form-group">
-                    <label for="source"><i class="fas fa-map-marker-alt"></i> Source Location:</label>
-                    <input type="text" id="source" name="source" required placeholder="Where are you starting from?">
-                </div>
-                
-                <div class="form-group">
-                    <label for="destination"><i class="fas fa-map-pin"></i> Destination:</label>
-                    <input type="text" id="destination" name="destination" required placeholder="Where do you want to go?">
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="start-date"><i class="far fa-calendar-alt"></i> Start Date:</label>
-                        <input type="date" id="start-date" name="start-date" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="end-date"><i class="far fa-calendar-check"></i> End Date:</label>
-                        <input type="date" id="end-date" name="end-date" required>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="budget"><i class="fas fa-dollar-sign"></i> Budget (USD):</label>
-                    <input type="number" id="budget" name="budget" required min="1" placeholder="Your travel budget">
-                </div>
-                
-                <div class="form-group">
-                    <label for="interests"><i class="fas fa-heart"></i> Interests:</label>
-                    <input type="text" id="interests" name="interests" required placeholder="e.g., history, food, adventure, nature">
-                </div>
-                
-                <div class="form-group">
-                    <label for="travelers"><i class="fas fa-users"></i> Number of Travelers:</label>
-                    <input type="number" id="travelers" name="travelers" required min="1" value="1">
-                </div>
-                
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="include-flights" name="include-flights" checked>
-                    <label for="include-flights"><i class="fas fa-plane"></i> Include flight details and prices</label>
-                </div>
-                
-                <button type="submit" class="btn-submit"><i class="fas fa-magic"></i> Generate Travel Plan</button>
-            </form>
-        </div>
-
-        <div class="results-container" id="results">
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p>Creating your personalized travel experience...</p>
-                <p class="loading-subtitle">Exploring destinations, finding the best options just for you</p>
-            </div>
-            <div id="plan-result"></div>
-        </div>
+    <!-- Success Toast (preserved for auth-handler.js) -->
+    <div id="success-toast" class="success-toast">
+        <i class="fas fa-check-circle"></i>
+        <span>Account Created Successfully! Welcome aboard.</span>
     </div>
 
-    <footer class="advanced-footer">
-        <div class="footer-bg"></div>
-        <p>&copy; 2024 Travel Planner AI | <i class="fas fa-brain"></i> Powered by <span class="gemini-highlight">Gemini 1.5-flash</span></p>
-        <p class="footer-tagline">Your AI travel companion for unforgettable journeys</p>
-    </footer>
-    <button id="scrollTopBtn" title="Go to top"><i class="fas fa-arrow-up"></i></button>
+    <!-- ═══════════════════════════════════════════
+         NAVBAR
+    ═══════════════════════════════════════════ -->
+    <nav id="main-nav" class="voya-nav">
+        <div class="nav-inner liquid-glass">
+            <a href="/" class="nav-logo">VOYA</a>
+            <div class="nav-links">
+                <a href="#hero">Explore</a>
+                <a href="#form-section">Destinations</a>
+                <a href="#results">Plans</a>
+                <a href="#footer">About</a>
+            </div>
+            <div class="nav-right">
+                <!-- Auth controls (preserved IDs for auth-handler.js) -->
+                <span id="user-name" class="nav-user-name"></span>
+                <button id="btn-logout" class="nav-btn-logout" style="display:none;">Logout</button>
+                <a href="#form-section" class="nav-cta">Plan My Trip</a>
+            </div>
+            <!-- Mobile hamburger -->
+            <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
 
-    <script src="../js/direct-api.js"></script>
+    <!-- ═══════════════════════════════════════════
+         HERO SECTION
+    ═══════════════════════════════════════════ -->
+    <section id="hero" class="hero-section">
+        <div class="hero-content">
+            <div class="hero-grid">
+                <!-- LEFT COLUMN -->
+                <div class="hero-left">
+                    <h1 id="hero-heading" class="hero-title" aria-label="Plan Your Journey. Experience the World.">
+                        <span class="hero-line" data-text="Plan Your Journey."></span>
+                        <span class="hero-line" data-text="Experience the World."></span>
+                    </h1>
+                    <p class="hero-sub fade-element" data-delay="800">
+                        AI-powered travel plans tailored to you.
+                    </p>
+                    <div class="hero-buttons fade-element" data-delay="1200">
+                        <a href="#form-section" class="btn-hero-primary">Generate My Plan</a>
+                        <a href="#results" class="btn-hero-secondary liquid-glass">See Examples</a>
+                    </div>
+                </div>
+                <!-- RIGHT COLUMN -->
+                <div class="hero-right fade-element" data-delay="1400">
+                    <div class="hero-tagline-card liquid-glass">
+                        <span class="tagline-text">Flights. Hotels. Experiences.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         TRAVEL FORM SECTION
+    ═══════════════════════════════════════════ -->
+    <section id="form-section" class="form-section scroll-reveal">
+        <div class="form-wrapper">
+            <div class="form-card liquid-glass">
+                <div class="form-header">
+                    <h2 class="form-title">Plan Your Trip</h2>
+                    <p class="form-subtitle">Fill in the details and let AI craft your perfect itinerary.</p>
+                </div>
+                <form id="travel-form">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="source">From</label>
+                            <div class="input-wrapper">
+                                <input type="text" id="source" name="source" required placeholder="e.g. New York">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="destination">To</label>
+                            <div class="input-wrapper">
+                                <input type="text" id="destination" name="destination" required placeholder="e.g. Tokyo, Japan">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="start-date">Start Date</label>
+                            <div class="input-wrapper">
+                                <input type="date" id="start-date" name="start-date" required>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="end-date">End Date</label>
+                            <div class="input-wrapper">
+                                <input type="date" id="end-date" name="end-date" required>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="budget">Budget (USD)</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="budget" name="budget" required min="1" placeholder="e.g. 3000">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="travelers">Number of Travelers</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="travelers" name="travelers" required min="1" value="1">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group input-full">
+                        <label for="interests">Interests</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="interests" name="interests" required placeholder="e.g. history, food, adventure, nature">
+                        </div>
+                    </div>
+                    <div class="flights-check">
+                        <input type="checkbox" id="include-flights" name="include-flights" checked>
+                        <label for="include-flights">Include flight details and prices</label>
+                    </div>
+                    <button type="submit" class="btn-submit">
+                        <span class="btn-submit-text">Generate Travel Plan</span>
+                        <span class="btn-submit-shimmer"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         RESULTS / OUTPUT SECTION
+    ═══════════════════════════════════════════ -->
+    <section id="results" class="results-section" style="display:none;">
+        <div class="results-wrapper">
+            <div class="results-card liquid-glass">
+                <!-- Loading state -->
+                <div id="loading" class="loading-state">
+                    <div class="loader-ring"></div>
+                    <h3>Crafting your itinerary…</h3>
+                    <p>Exploring destinations and finding the best options.</p>
+                </div>
+                <div id="plan-result" class="plan-result"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         FOOTER
+    ═══════════════════════════════════════════ -->
+    <footer id="footer" class="voya-footer">
+        <div class="footer-inner">
+            <span class="footer-brand">VOYA</span>
+            <p>© 2024 VOYA — Powered by Gemini 2.0 Flash</p>
+        </div>
+    </footer>
+
+    <!-- ═══════════════════════════════════════════
+         SCRIPTS (preserved — do NOT modify)
+    ═══════════════════════════════════════════ -->
+    <script type="module" src="js/auth-handler.js"></script>
+    <script src="js/api-handler.js?v=20"></script>
+    <script src="js/form-handler-optimized.js?v=20"></script>
+
     <script>
-    // Scroll to Top Button Logic
-    const scrollBtn = document.getElementById('scrollTopBtn');
-    window.onscroll = function() {
-        if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
-            scrollBtn.style.display = 'block';
-        } else {
-            scrollBtn.style.display = 'none';
-        }
-    };
-    scrollBtn.onclick = function() {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
+        // ── Auth bridge (preserved) ──
+        const checkAuth = setInterval(() => {
+            if (window.authHandler) {
+                const logoutBtn = document.getElementById('btn-logout');
+                if (logoutBtn) logoutBtn.onclick = () => window.authHandler.logout();
+                clearInterval(checkAuth);
+            }
+        }, 100);
+    </script>
+
+    <!-- ── Page Animations ── -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            /* ── Character-by-character staggered hero text ── */
+            document.querySelectorAll('.hero-line').forEach((line, lineIdx) => {
+                const text = line.getAttribute('data-text');
+                line.innerHTML = '';
+                const lineStartDelay = lineIdx * text.length * 30; // offset 2nd line
+                [...text].forEach((char, i) => {
+                    const span = document.createElement('span');
+                    span.className = 'hero-char';
+                    span.textContent = char === ' ' ? '\u00A0' : char;
+                    span.style.animationDelay = `${200 + lineStartDelay + i * 30}ms`;
+                    line.appendChild(span);
+                });
+            });
+
+            /* ── Fade-in elements with custom delay ── */
+            document.querySelectorAll('.fade-element').forEach(el => {
+                const delay = el.getAttribute('data-delay') || 0;
+                setTimeout(() => el.classList.add('visible'), parseInt(delay));
+            });
+
+            /* ── IntersectionObserver for scroll-reveal sections ── */
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('revealed');
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.12 });
+
+                document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+            }
+
+            /* ── Mobile nav toggle ── */
+            const hamburger = document.getElementById('nav-hamburger');
+            const navLinks = document.querySelector('.nav-links');
+            if (hamburger && navLinks) {
+                hamburger.addEventListener('click', () => {
+                    hamburger.classList.toggle('active');
+                    navLinks.classList.toggle('mobile-open');
+                });
+            }
+
+            /* ── Smooth anchor scrolling ── */
+            document.querySelectorAll('a[href^="#"]').forEach(a => {
+                a.addEventListener('click', e => {
+                    const target = document.querySelector(a.getAttribute('href'));
+                    if (target) {
+                        e.preventDefault();
+                        target.scrollIntoView({ behavior: 'smooth' });
+                        // Close mobile menu
+                        if (navLinks) navLinks.classList.remove('mobile-open');
+                        if (hamburger) hamburger.classList.remove('active');
+                    }
+                });
+            });
+        });
     </script>
 </body>
+
 </html>

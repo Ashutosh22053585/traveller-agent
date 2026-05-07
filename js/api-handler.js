@@ -35,9 +35,16 @@ class APIHandler {
         }
 
         try {
+            const token = await window.authHandler.getToken();
+            const headers = { ...options.headers };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(url, {
                 ...options,
-                signal: this.timeoutSignal(30000) // 30 second timeout
+                headers,
+                signal: options.signal || this.timeoutSignal(60000)
             });
 
             if (!response.ok) {
@@ -62,23 +69,8 @@ class APIHandler {
     }
 
     async generateTravelPlan(formData) {
-        const prompt = this.buildPrompt(formData);
-        const cacheKey = `travel_plan_${this.hashString(JSON.stringify(formData))}`;
-
         try {
-            // Get flight and hotel data in parallel
-            const [flightData, hotelData] = await Promise.allSettled([
-                formData['include-flights'] ? this.getFlightData(formData) : null,
-                this.getHotelData(formData)
-            ]);
-
-            // Prepare additional data for prompt enhancement
-            const additionalData = {
-                flights: flightData.status === 'fulfilled' ? flightData.value : null,
-                hotels: hotelData.status === 'fulfilled' ? hotelData.value : null
-            };
-
-            // Call local backend (uses server-side API key)
+            // Build payload for Flask backend — backend handles Gemini + SerpApi
             const backendPayload = {
                 source: formData.source,
                 destination: formData.destination,
@@ -86,32 +78,33 @@ class APIHandler {
                 endDate: formData['end-date'],
                 budget: formData.budget,
                 interests: formData.interests,
-                travelers: formData.travelers
+                travelers: formData.travelers,
+                includeFlights: formData['include-flights'] || false
             };
             console.log('DEBUG: backendPayload:', backendPayload);
-            const backendResp = await fetch('http://localhost:5000/api/generate-plan', {
+
+            const backendData = await this.makeRequest('http://127.0.0.1:5001/api/generate-plan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(backendPayload),
-                signal: this.timeoutSignal(60000)
+                signal: this.timeoutSignal(90000) // 90s for Gemini + SerpApi
             });
 
-            if (!backendResp.ok) {
-                const errorData = await backendResp.json().catch(() => ({}));
-                throw new Error(`Backend error: ${backendResp.status} - ${errorData.error || 'Unknown error'}`);
-            }
+            console.log('DEBUG: backendData keys:', Object.keys(backendData));
 
-            const backendData = await backendResp.json();
-            if (!backendData.success || !backendData.plan) {
-                throw new Error('Backend returned invalid response');
+            // Validate: backend must return success and at least one of plan or text
+            if (!backendData.success) {
+                throw new Error(backendData.error || 'Backend returned an error');
             }
-
-            const travelPlan = backendData.plan;
+            if (!backendData.plan && !backendData.text) {
+                throw new Error('Backend returned no plan data');
+            }
 
             return {
-                text: travelPlan,
-                flights: additionalData.flights,
-                hotels: additionalData.hotels
+                text: backendData.text || null,
+                plan: backendData.plan || null,
+                flights: backendData.flights || null,
+                hotels: backendData.hotels || null
             };
 
         } catch (error) {

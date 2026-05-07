@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | VOYA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #DEDBC8; --black: #000; --border: rgba(255,255,255,0.1); }
+        *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; font-family:'Almarai',sans-serif; }
+        html,body { height:100%; background:var(--black); color:var(--primary); overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+        ::selection { background:rgba(222,219,200,0.2); }
+
+        /* Liquid Glass */
+        .liquid-glass { background:rgba(0,0,0,0.4); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); box-shadow:inset 0 1px 1px rgba(255,255,255,0.1); position:relative; overflow:hidden; }
+        .liquid-glass::before { content:''; position:absolute; inset:0; border-radius:inherit; padding:1.4px; background:linear-gradient(180deg,rgba(255,255,255,0.25) 0%,rgba(255,255,255,0.08) 20%,rgba(255,255,255,0) 50%,rgba(255,255,255,0.08) 80%,rgba(255,255,255,0.25) 100%); -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; }
+
+        /* Toast */
+        .success-toast { position:fixed; top:20px; right:20px; background:rgba(16,185,129,0.9); color:#fff; padding:14px 24px; border-radius:12px; display:flex; align-items:center; gap:10px; z-index:9999; transform:translateX(140%); transition:transform 0.4s cubic-bezier(0.22,1,0.36,1); font-size:14px; }
+        .success-toast.active { transform:translateX(0); }
+
+        /* Layout */
+        .auth-page { display:grid; grid-template-columns:1fr 1fr; min-height:100vh; }
+        @media(max-width:768px) { .auth-page { grid-template-columns:1fr; } .auth-right { display:none; } }
+
+        /* LEFT — Form */
+        .auth-left { display:flex; flex-direction:column; justify-content:center; align-items:center; background:var(--black); padding:48px 32px; }
+        .auth-left-inner { width:100%; max-width:400px; }
+
+        .anim-item { opacity:0; transform:translateX(-30px); transition:opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1); }
+        body.loaded .anim-item { opacity:1; transform:translateX(0); }
+        .anim-item:nth-child(1){transition-delay:0ms} .anim-item:nth-child(2){transition-delay:100ms} .anim-item:nth-child(3){transition-delay:150ms} .anim-item:nth-child(4){transition-delay:200ms} .anim-item:nth-child(5){transition-delay:220ms} .anim-item:nth-child(6){transition-delay:250ms} .anim-item:nth-child(7){transition-delay:280ms} .anim-item:nth-child(8){transition-delay:300ms} .anim-item:nth-child(9){transition-delay:350ms} .anim-item:nth-child(10){transition-delay:400ms} .anim-item:nth-child(11){transition-delay:450ms}
+
+        .voya-logo { color:var(--primary); font-size:12px; letter-spacing:0.3em; font-weight:600; margin-bottom:48px; text-decoration:none; display:inline-block; }
+        .auth-heading { color:var(--primary); font-size:clamp(2rem,4vw,3rem); font-weight:400; letter-spacing:-0.03em; margin-bottom:8px; line-height:1.1; }
+        .auth-subtext { color:#6b7280; font-size:14px; margin-bottom:40px; line-height:1.5; }
+
+        .form-group { margin-bottom:20px; }
+        .form-label { display:block; font-size:10px; letter-spacing:0.15em; color:#6b7280; text-transform:uppercase; margin-bottom:8px; }
+        .form-input-wrap { position:relative; }
+        .form-input { width:100%; background:transparent; border:1px solid var(--border); color:var(--primary); border-radius:12px; padding:14px 16px; font-size:14px; font-family:'Almarai',sans-serif; transition:border-color 0.25s; outline:none; }
+        .form-input::placeholder { color:#4b5563; }
+        .form-input:focus { border-color:rgba(222,219,200,0.4); }
+
+        .eye-toggle { position:absolute; right:16px; top:50%; transform:translateY(-50%); background:none; border:none; color:#6b7280; cursor:pointer; font-size:16px; padding:0; transition:color 0.2s; }
+        .eye-toggle:hover { color:var(--primary); }
+        .form-input[type="password"] ~ .eye-toggle .eye-open { display:none; }
+        .form-input[type="text"] ~ .eye-toggle .eye-closed { display:none; }
+
+        .forgot-link { display:block; text-align:right; font-size:12px; color:rgba(222,219,200,0.5); text-decoration:none; margin-bottom:24px; transition:color 0.2s; }
+        .forgot-link:hover { color:var(--primary); }
+
+        .check-row { display:flex; align-items:center; gap:8px; margin-bottom:24px; font-size:12px; color:#6b7280; }
+        .check-row input[type="checkbox"] { accent-color:var(--primary); width:14px; height:14px; cursor:pointer; }
+        .check-row label { cursor:pointer; margin:0; }
+
+        .btn-submit { width:100%; background:var(--primary); color:#000; font-weight:700; padding:14px; border-radius:12px; border:none; font-size:14px; cursor:pointer; font-family:'Almarai',sans-serif; transition:transform 0.15s,opacity 0.15s; }
+        .btn-submit:hover { transform:scale(1.01); opacity:0.92; }
+        .btn-submit:active { transform:scale(0.98); }
+
+        .auth-divider { display:flex; align-items:center; gap:16px; margin:24px 0; }
+        .auth-divider span { font-size:11px; color:#4b5563; letter-spacing:0.1em; white-space:nowrap; }
+        .auth-divider::before,.auth-divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.08); }
+
+        .btn-google { border:1px solid var(--border); border-radius:12px; width:100%; padding:12px; color:var(--primary); font-size:14px; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; font-family:'Almarai',sans-serif; transition:background 0.2s; }
+        .btn-google:hover { background:rgba(255,255,255,0.05); }
+
+        .btn-row { display:flex; gap:10px; margin-top:12px; }
+        .btn-secondary { flex:1; border:1px solid var(--border); border-radius:12px; padding:10px; color:#6b7280; font-size:13px; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; font-family:'Almarai',sans-serif; background:transparent; transition:background 0.2s,color 0.2s; }
+        .btn-secondary:hover { background:rgba(255,255,255,0.04); color:var(--primary); }
+        .btn-debug { border-color:rgba(220,60,60,0.25); color:rgba(220,60,60,0.6); }
+        .btn-debug:hover { background:rgba(220,60,60,0.08); color:#ef4444; }
+
+        .auth-toggle { text-align:center; margin-top:24px; font-size:14px; color:#6b7280; }
+        .auth-toggle a { color:var(--primary); font-weight:600; text-decoration:none; margin-left:4px; transition:opacity 0.2s; }
+        .auth-toggle a:hover { opacity:0.8; }
+
+        .auth-footer { margin-top:48px; font-size:11px; color:#374151; }
+        .auth-footer a { color:#374151; text-decoration:none; margin-right:16px; transition:color 0.2s; }
+        .auth-footer a:hover { color:#6b7280; }
+
+        /* ═══ RIGHT — Cinematic Slideshow ═══ */
+        .auth-right { position:relative; overflow:hidden; }
+
+        .slideshow { position:absolute; inset:0; }
+        .slide {
+            position:absolute; inset:0; opacity:0;
+            transition:opacity 1.8s cubic-bezier(0.4,0,0.2,1);
+        }
+        .slide.active { opacity:1; }
+        .slide img {
+            width:100%; height:100%; object-fit:cover;
+            animation:kenburns 18s ease-in-out infinite alternate;
+        }
+        .slide:nth-child(1) img { animation-name:kb1; }
+        .slide:nth-child(2) img { animation-name:kb2; }
+        .slide:nth-child(3) img { animation-name:kb3; }
+
+        @keyframes kb1 { 0%{transform:scale(1) translate(0,0)} 100%{transform:scale(1.15) translate(-2%,-3%)} }
+        @keyframes kb2 { 0%{transform:scale(1.1) translate(2%,0)} 100%{transform:scale(1) translate(-1%,2%)} }
+        @keyframes kb3 { 0%{transform:scale(1) translate(0,2%)} 100%{transform:scale(1.2) translate(2%,-2%)} }
+
+        /* Overlays */
+        .right-noise { position:absolute; inset:0; pointer-events:none; opacity:0.12; mix-blend-mode:overlay; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E"); z-index:2; }
+        .right-gradient { position:absolute; inset:0; pointer-events:none; background:linear-gradient(to top,rgba(0,0,0,0.75) 0%,transparent 40%,rgba(0,0,0,0.35) 100%); z-index:3; }
+        .right-vignette { position:absolute; inset:0; pointer-events:none; box-shadow:inset 0 0 120px rgba(0,0,0,0.5); z-index:3; }
+
+        /* Slide indicator dots */
+        .slide-dots { position:absolute; top:32px; right:32px; display:flex; gap:8px; z-index:10; }
+        .slide-dot { width:8px; height:8px; border-radius:50%; background:rgba(222,219,200,0.25); border:none; cursor:pointer; transition:all 0.4s; padding:0; }
+        .slide-dot.active { background:var(--primary); box-shadow:0 0 12px rgba(222,219,200,0.3); width:24px; border-radius:4px; }
+
+        /* Category label */
+        .slide-label { position:absolute; top:32px; left:32px; z-index:10; font-size:10px; letter-spacing:0.2em; color:rgba(222,219,200,0.5); text-transform:uppercase; transition:opacity 0.6s; }
+
+        /* Review card */
+        .review-card { position:absolute; bottom:40px; left:40px; border:1px solid var(--border); border-radius:16px; padding:20px 24px; max-width:280px; z-index:10; opacity:0; transform:translateY(20px); transition:opacity 0.8s cubic-bezier(0.16,1,0.3,1) 0.8s, transform 0.8s cubic-bezier(0.16,1,0.3,1) 0.8s; }
+        body.loaded .review-card { opacity:1; transform:translateY(0); }
+        .review-stars { color:#FBBF24; font-size:14px; margin-bottom:8px; letter-spacing:2px; }
+        .review-quote { color:var(--primary); font-size:13px; font-weight:300; line-height:1.6; }
+        .review-author { color:#6b7280; font-size:11px; margin-top:10px; }
+
+        /* Ambient text */
+        .ambient-text { position:absolute; bottom:40px; right:40px; font-size:clamp(3rem,5vw,5rem); font-weight:400; color:rgba(222,219,200,0.12); letter-spacing:-0.04em; line-height:0.95; text-align:right; pointer-events:none; white-space:pre-line; z-index:10; }
+    </style>
+</head>
+<body>
+    <div id="success-toast" class="success-toast">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Account Created Successfully!</span>
+    </div>
+
+    <div class="auth-page">
+        <!-- LEFT — Form -->
+        <div class="auth-left">
+            <div class="auth-left-inner">
+                <a href="/" class="voya-logo anim-item">VOYA</a>
+                <h1 id="auth-title" class="auth-heading anim-item">Welcome Back</h1>
+                <p id="auth-subtitle" class="auth-subtext anim-item">Plan your next journey. Sign in to continue.</p>
+
+                <form id="login-form" autocomplete="on">
+                    <div class="form-group anim-item">
+                        <label class="form-label" for="email">Email</label>
+                        <div class="form-input-wrap">
+                            <input class="form-input" type="email" id="email" placeholder="name@agency.com" required autocomplete="email">
+                        </div>
+                    </div>
+                    <div class="form-group anim-item">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                            <label class="form-label" for="password" style="margin-bottom:0">Password</label>
+                            <a href="#" class="forgot-link" style="margin-bottom:0">Forgot password?</a>
+                        </div>
+                        <div class="form-input-wrap">
+                            <input class="form-input" type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+                            <button type="button" class="eye-toggle" id="eye-toggle" aria-label="Toggle password">
+                                <span class="eye-closed"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9.27-3.11-11-7.5a11.7 11.7 0 013.168-4.477M6.343 6.343A9.972 9.972 0 0112 5c5 0 9.27 3.11 11 7.5a11.7 11.7 0 01-4.373 5.157M6.343 6.343L3 3m3.343 3.343l3.535 3.535m5.657 5.657L19 19m-3.879-3.879A3 3 0 019.88 9.88"/></svg></span>
+                                <span class="eye-open"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M1 12s4-7.5 11-7.5S23 12 23 12s-4 7.5-11 7.5S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="check-row anim-item"><input type="checkbox" id="stay-signed"><label for="stay-signed">Stay signed in for 30 days</label></div>
+                    <button type="submit" class="btn-submit anim-item" id="auth-submit">Sign In to Portal</button>
+                </form>
+
+                <div class="auth-divider anim-item"><span>OR CONTINUE WITH</span></div>
+                <button class="btn-google liquid-glass anim-item" id="google-login">
+                    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59A14.5 14.5 0 019.5 24c0-1.59.28-3.14.77-4.59l-7.98-6.19A23.998 23.998 0 000 24c0 3.77.9 7.34 2.44 10.5l8.09-5.91z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                    Continue with Google
+                </button>
+                <div class="btn-row anim-item">
+                    <button class="btn-secondary" id="phone-login"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.362 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg> Phone</button>
+                    <button class="btn-secondary btn-debug" id="debug-skip"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Skip (Debug)</button>
+                </div>
+                <div class="auth-toggle anim-item"><span id="auth-toggle-text">Don't have an account?</span><a href="#" id="auth-toggle-link">Sign Up</a></div>
+                <div class="auth-footer anim-item"><p>&copy; 2024 VOYA Inc.</p><div style="margin-top:6px"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></div></div>
+            </div>
+        </div>
+
+        <!-- RIGHT — Cinematic Slideshow -->
+        <div class="auth-right">
+            <div class="slideshow" id="slideshow">
+                <div class="slide active"><img src="assets/slide-jet.png" alt="Private jet at sunset"></div>
+                <div class="slide"><img src="assets/slide-hotel.png" alt="Luxury penthouse"></div>
+                <div class="slide"><img src="assets/slide-island.png" alt="Tropical island"></div>
+            </div>
+            <div class="right-noise"></div>
+            <div class="right-gradient"></div>
+            <div class="right-vignette"></div>
+
+            <span class="slide-label" id="slide-label">PRIVATE AVIATION</span>
+            <div class="slide-dots" id="slide-dots">
+                <button class="slide-dot active" data-idx="0"></button>
+                <button class="slide-dot" data-idx="1"></button>
+                <button class="slide-dot" data-idx="2"></button>
+            </div>
+
+            <div class="review-card liquid-glass">
+                <div class="review-stars">★★★★★</div>
+                <p class="review-quote">"The best tool for planning luxury travel on a budget."</p>
+                <p class="review-author">— Sarah K., Travel Agent</p>
+            </div>
+            <div class="ambient-text">Fly.
+Stay.
+Explore.</div>
+        </div>
+    </div>
+
+    <!-- Firebase Auth (preserved) -->
+    <script type="module" src="js/auth-handler.js"></script>
+    <script>
+        // Page load animation
+        window.addEventListener('load', () => requestAnimationFrame(() => document.body.classList.add('loaded')));
+
+        // Password eye toggle
+        const eyeBtn = document.getElementById('eye-toggle');
+        const pwdInput = document.getElementById('password');
+        if (eyeBtn && pwdInput) eyeBtn.addEventListener('click', () => { pwdInput.type = pwdInput.type === 'password' ? 'text' : 'password'; });
+
+        // ═══ Ken Burns Slideshow ═══
+        const slides = document.querySelectorAll('.slide');
+        const dots = document.querySelectorAll('.slide-dot');
+        const labelEl = document.getElementById('slide-label');
+        const labels = ['PRIVATE AVIATION', 'LUXURY STAYS', 'ISLAND ESCAPES'];
+        let current = 0;
+
+        function goToSlide(idx) {
+            slides[current].classList.remove('active');
+            dots[current].classList.remove('active');
+            current = idx;
+            slides[current].classList.add('active');
+            dots[current].classList.add('active');
+            if (labelEl) { labelEl.style.opacity = '0'; setTimeout(() => { labelEl.textContent = labels[current]; labelEl.style.opacity = '1'; }, 400); }
+        }
+
+        dots.forEach(d => d.addEventListener('click', () => goToSlide(parseInt(d.dataset.idx))));
+        setInterval(() => goToSlide((current + 1) % slides.length), 5000);
+
+        // ═══ Auth bridge (preserved) ═══
+        const checkAuth = setInterval(() => {
+            if (window.authHandler) {
+                let isSignUpMode = false;
+                const title = document.getElementById('auth-title');
+                const subtitle = document.getElementById('auth-subtitle');
+                const submitBtn = document.getElementById('auth-submit');
+                const toggleText = document.getElementById('auth-toggle-text');
+                const toggleLink = document.getElementById('auth-toggle-link');
+
+                toggleLink.onclick = (e) => { e.preventDefault(); isSignUpMode = !isSignUpMode;
+                    if (isSignUpMode) { title.innerText="Create Account"; subtitle.innerText="Join VOYA and start building amazing travel experiences."; submitBtn.innerText="Create My Account"; toggleText.innerText="Already have an account?"; toggleLink.innerText="Log In"; }
+                    else { title.innerText="Welcome Back"; subtitle.innerText="Plan your next journey. Sign in to continue."; submitBtn.innerText="Sign In to Portal"; toggleText.innerText="Don't have an account?"; toggleLink.innerText="Sign Up"; }
+                };
+                document.getElementById('login-form').onsubmit = (e) => { e.preventDefault(); const email=document.getElementById('email').value; const password=document.getElementById('password').value; if(isSignUpMode){window.authHandler.signUpWithEmail(email,password)}else{window.authHandler.loginWithEmail(email,password)} };
+                document.getElementById('google-login').onclick = () => window.authHandler.login();
+                document.getElementById('phone-login').onclick = () => window.authHandler.phoneLogin();
+                document.getElementById('debug-skip').onclick = () => window.authHandler.skipLogin();
+                clearInterval(checkAuth);
+            }
+        }, 100);
+    </script>
+</body>
+</html>

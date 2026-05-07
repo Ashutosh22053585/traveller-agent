@@ -15,10 +15,7 @@ class OptimizedTravelFormHandler {
         this.setupDateConstraints();
         this.setupFormValidation();
         this.setupFormSubmission();
-        this.setupScrollButton();
         this.setupPerformanceOptimizations();
-        this.setup3DTilt();
-        this.setupRippleEffect();
     }
 
     setupDateConstraints() {
@@ -79,93 +76,6 @@ class OptimizedTravelFormHandler {
         });
     }
 
-    setupScrollButton() {
-        const scrollBtn = document.getElementById('scrollTopBtn');
-        if (!scrollBtn) return;
-
-        let scrollTimeout;
-
-        window.addEventListener('scroll', () => {
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                if (window.pageYOffset > 300) {
-                    scrollBtn.style.display = 'block';
-                } else {
-                    scrollBtn.style.display = 'none';
-                }
-            }, 100);
-        }, { passive: true });
-
-        scrollBtn.addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-    }
-
-    setupPerformanceOptimizations() {
-        // Preload critical resources
-        this.preloadResources();
-
-        // Setup intersection observer for lazy loading
-        this.setupIntersectionObserver();
-
-        // Clear API cache periodically
-        setInterval(() => {
-            this.apiHandler.clearOldCache();
-        }, 300000); // 5 minutes
-    }
-
-    setup3DTilt() {
-        const container = document.querySelector('.form-container');
-        const header = document.querySelector('.advanced-header');
-
-        const applyTilt = (element, e) => {
-            const rect = element.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-
-            const rotateX = ((y - centerY) / centerY) * -5; // Max 5deg rotation
-            const rotateY = ((x - centerX) / centerX) * 5;
-
-            element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-        };
-
-        const resetTilt = (element) => {
-            element.style.transform = 'perspective(1000px) rotateX(0) rotateY(0)';
-        };
-
-        if (container) {
-            container.addEventListener('mousemove', (e) => applyTilt(container, e));
-            container.addEventListener('mouseleave', () => resetTilt(container));
-        }
-
-        if (header) {
-            header.addEventListener('mousemove', (e) => applyTilt(header, e));
-            header.addEventListener('mouseleave', () => resetTilt(header));
-        }
-    }
-
-    setupRippleEffect() {
-        const buttons = document.querySelectorAll('button');
-        buttons.forEach(btn => {
-            btn.addEventListener('click', function (e) {
-                const x = e.clientX - e.target.offsetLeft;
-                const y = e.clientY - e.target.offsetTop;
-
-                const ripples = document.createElement('span');
-                ripples.style.left = x + 'px';
-                ripples.style.top = y + 'px';
-                ripples.classList.add('ripple');
-                this.appendChild(ripples);
-
-                setTimeout(() => {
-                    ripples.remove();
-                }, 600);
-            });
-        });
-    }
 
     preloadResources() {
         // Preload font awesome icons that might be used
@@ -332,8 +242,8 @@ class OptimizedTravelFormHandler {
         } catch (error) {
             console.error('Error generating travel plan:', error);
             this.showError((error && error.message) ? error.message : 'Failed to generate travel plan. Please try again.');
-            this.hideLoading();
         } finally {
+            this.hideLoading();
             this.isSubmitting = false;
         }
     }
@@ -398,7 +308,7 @@ class OptimizedTravelFormHandler {
     }
 
     displayTravelPlan(result, formData) {
-        const { text, flights, hotels } = result;
+        const { text, plan, flights, hotels } = result;
 
         let planHTML = `
             <div class="plan-header">
@@ -424,23 +334,135 @@ class OptimizedTravelFormHandler {
             </div>
         `;
 
-        // Add hotels section if available
-        if (hotels && hotels.hotels) {
-            planHTML += this.generateHotelSection(hotels.hotels);
+        // Add flights section if available
+        if (flights && Array.isArray(flights) && flights.length > 0) {
+            planHTML += this.generateFlightSection(flights);
         }
 
-        // Add main plan content
-        planHTML += `<div class="plan-content">${this.formatPlanText(text)}</div>`;
+        // Add hotels section if available
+        if (hotels && Array.isArray(hotels) && hotels.length > 0) {
+            planHTML += this.generateHotelSection(hotels);
+        }
 
-        // Add flights section if available
-        if (flights && flights.best_flights) {
-            planHTML += this.generateFlightSection(flights.best_flights);
+        // Render structured plan (JSON) or fallback to raw text
+        if (plan && typeof plan === 'object' && plan.itinerary) {
+            planHTML += this.renderStructuredPlan(plan);
+        } else if (text) {
+            planHTML += `<div class="plan-content">${this.formatPlanText(text)}</div>`;
         }
 
         this.planResult.innerHTML = planHTML;
 
         // Setup interactive elements
         this.setupPlanInteractions();
+    }
+
+    // ─── Structured Plan Renderers ─────────────────────────
+    renderStructuredPlan(plan) {
+        let html = '';
+
+        // Overview
+        if (plan.overview) {
+            html += `<div class="plan-overview"><p>${plan.overview}</p></div>`;
+        }
+
+        // Day-by-day itinerary cards
+        if (plan.itinerary && plan.itinerary.length > 0) {
+            html += `<div class="itinerary-section">
+                <h3><i class="fas fa-route"></i> Day-by-Day Itinerary</h3>
+                <div class="day-cards">`;
+
+            plan.itinerary.forEach(day => {
+                html += `
+                    <div class="day-card">
+                        <div class="day-card-header">
+                            <span class="day-number">Day ${day.day}</span>
+                            <span class="day-title">${day.title || ''}</span>
+                        </div>
+                        <div class="day-activities">`;
+
+                (day.activities || []).forEach(act => {
+                    const timeIcon = act.time === 'Morning' ? 'fa-sun' :
+                                     act.time === 'Afternoon' ? 'fa-cloud-sun' : 'fa-moon';
+                    html += `
+                        <div class="activity-item">
+                            <div class="activity-time">
+                                <i class="fas ${timeIcon}"></i> ${act.time}
+                            </div>
+                            <div class="activity-body">
+                                <div class="activity-title">${act.title}</div>
+                                <div class="activity-desc">${act.description || ''}</div>
+                                ${act.cost > 0 ? `<span class="activity-cost">~$${act.cost}</span>` : ''}
+                            </div>
+                        </div>`;
+                });
+
+                html += `</div></div>`;
+            });
+
+            html += `</div></div>`;
+        }
+
+        // Budget breakdown
+        if (plan.budget_breakdown) {
+            const b = plan.budget_breakdown;
+            html += `
+                <div class="budget-section">
+                    <h3><i class="fas fa-wallet"></i> Budget Breakdown</h3>
+                    <div class="budget-grid">
+                        ${this.budgetRow('Transportation', b.transportation, b.total)}
+                        ${this.budgetRow('Accommodation', b.accommodation, b.total)}
+                        ${this.budgetRow('Food', b.food, b.total)}
+                        ${this.budgetRow('Activities', b.activities, b.total)}
+                        ${this.budgetRow('Miscellaneous', b.miscellaneous, b.total)}
+                    </div>
+                    <div class="budget-total">
+                        <span>Estimated Total</span>
+                        <strong>$${b.total || 0}</strong>
+                    </div>
+                </div>`;
+        }
+
+        // Food recommendations
+        if (plan.food_recommendations && plan.food_recommendations.length > 0) {
+            html += `<div class="food-section">
+                <h3><i class="fas fa-utensils"></i> Where to Eat</h3>
+                <div class="food-grid">`;
+            plan.food_recommendations.forEach(f => {
+                html += `<div class="food-card">
+                    <div class="food-name">${f.name}</div>
+                    <div class="food-meta"><span>${f.cuisine || ''}</span><span>${f.price_range || ''}</span></div>
+                </div>`;
+            });
+            html += `</div></div>`;
+        }
+
+        // Travel tips
+        if (plan.travel_tips && plan.travel_tips.length > 0) {
+            html += `<div class="tips-section">
+                <h3><i class="fas fa-lightbulb"></i> Travel Tips</h3>
+                <ul class="tips-list">${plan.travel_tips.map(t => `<li>${t}</li>`).join('')}</ul>
+            </div>`;
+        }
+
+        // Packing suggestions
+        if (plan.packing_suggestions && plan.packing_suggestions.length > 0) {
+            html += `<div class="packing-section">
+                <h3><i class="fas fa-suitcase"></i> Packing List</h3>
+                <div class="packing-tags">${plan.packing_suggestions.map(p => `<span class="packing-tag">${p}</span>`).join('')}</div>
+            </div>`;
+        }
+
+        return html;
+    }
+
+    budgetRow(label, amount, total) {
+        const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
+        return `<div class="budget-row">
+            <span class="budget-label">${label}</span>
+            <div class="budget-bar-wrap"><div class="budget-bar" style="width:${pct}%"></div></div>
+            <span class="budget-amount">$${amount || 0}</span>
+        </div>`;
     }
 
     generateHotelSection(hotels) {
@@ -451,22 +473,32 @@ class OptimizedTravelFormHandler {
         `;
 
         hotels.forEach(hotel => {
+            const rating = hotel.rating || 0;
+            const stars = hotel.stars || '';
+            const priceDisplay = hotel.price_per_night || hotel.price || 'N/A';
+            const amenities = hotel.amenities || [];
+            const thumbnail = hotel.thumbnail || '';
+
             hotelHTML += `
                 <div class="hotel-card">
+                    ${thumbnail ? `<div class="hotel-thumb"><img src="${thumbnail}" alt="${hotel.name}" loading="lazy"></div>` : ''}
                     <div class="hotel-header">
                         <div class="hotel-name">${hotel.name}</div>
-                        <div class="hotel-brand">${hotel.brand}</div>
+                        <div class="hotel-brand">${stars}</div>
                     </div>
                     <div class="hotel-meta">
-                        <div class="hotel-price">$${hotel.price}/night</div>
+                        <div class="hotel-price">${priceDisplay}/night</div>
                         <div class="hotel-rating">
-                            <i class="fas fa-star"></i> ${hotel.rating}
+                            <i class="fas fa-star"></i> ${rating}
+                            ${hotel.reviews ? `<span class="hotel-reviews">(${hotel.reviews})</span>` : ''}
                         </div>
                     </div>
-                    <div class="hotel-address">${hotel.address}</div>
-                    <div class="hotel-amenities">
-                        ${hotel.amenities.map(amenity => `<span>${amenity}</span>`).join('')}
-                    </div>
+                    ${hotel.description ? `<div class="hotel-address">${hotel.description}</div>` : ''}
+                    ${amenities.length > 0 ? `
+                        <div class="hotel-amenities">
+                            ${amenities.map(a => `<span>${a}</span>`).join('')}
+                        </div>
+                    ` : ''}
                 </div>
             `;
         });
@@ -482,30 +514,43 @@ class OptimizedTravelFormHandler {
                 <div class="flight-cards">
         `;
 
-        flights.forEach((flight, index) => {
+        flights.forEach((flight) => {
+            // Duration comes as total minutes from SerpApi
+            const durationMins = flight.duration || 0;
+            const hours = Math.floor(durationMins / 60);
+            const mins = durationMins % 60;
+            const durationStr = durationMins > 0 ? `${hours}h ${mins}m` : '';
+            const stops = flight.stops || 0;
+            const price = flight.price || 0;
+
             flightHTML += `
                 <div class="flight-card">
                     <div class="flight-header">
-                        <div class="airline">${flight.airline}</div>
-                        <div class="flight-price">$${flight.price}</div>
+                        <div class="airline">
+                            ${flight.airline_logo ? `<img src="${flight.airline_logo}" alt="" width="20" height="20" style="vertical-align:middle;margin-right:6px;border-radius:4px;">` : ''}
+                            ${flight.airline}
+                        </div>
+                        <div class="flight-price">$${price}</div>
                     </div>
                     <div class="flight-times">
                         <div class="departure">
-                            <strong>${flight.departure_time}</strong>
-                            <small>${flight.departure_airport}</small>
+                            <strong>${flight.departure_time || ''}</strong>
+                            <small>${flight.departure_airport || ''}</small>
                         </div>
                         <div class="flight-duration">
-                            <i class="fas fa-clock"></i> ${flight.duration}
+                            ${durationStr}
+                            <div style="width:60px;height:1px;background:rgba(255,255,255,0.2);margin:4px auto;"></div>
+                            <small>${stops === 0 ? 'Direct' : stops + ' stop' + (stops > 1 ? 's' : '')}</small>
                         </div>
                         <div class="arrival">
-                            <strong>${flight.arrival_time}</strong>
-                            <small>${flight.arrival_airport}</small>
+                            <strong>${flight.arrival_time || ''}</strong>
+                            <small>${flight.arrival_airport || ''}</small>
                         </div>
                     </div>
-                    ${flight.layovers && flight.layovers.length > 0 ?
-                    `<div class="layovers">Layovers: ${flight.layovers.join(', ')}</div>` :
-                    '<div class="direct-flight"><i class="fas fa-check"></i> Direct Flight</div>'
-                }
+                    ${stops === 0 ?
+                        '<div class="direct-flight"><i class="fas fa-check"></i> Direct Flight</div>' :
+                        `<div class="layovers">${stops} stop${stops > 1 ? 's' : ''}</div>`
+                    }
                 </div>
             `;
         });
@@ -602,7 +647,11 @@ class OptimizedTravelFormHandler {
             <small>Scroll down to view your personalized itinerary.</small>
         `;
 
-        this.resultsContainer.insertBefore(successMsg, this.planResult);
+        if (this.planResult && this.planResult.parentNode) {
+            this.planResult.parentNode.insertBefore(successMsg, this.planResult);
+        } else {
+            this.resultsContainer.appendChild(successMsg);
+        }
 
         setTimeout(() => {
             if (successMsg.parentNode) {
@@ -620,6 +669,20 @@ class OptimizedTravelFormHandler {
                 budget_range: this.getBudgetRange(formData.budget),
                 travelers: formData.travelers
             });
+        }
+    }
+
+    setupPerformanceOptimizations() {
+        // Lazy-load results section only when it scrolls into view
+        if ('IntersectionObserver' in window && this.resultsContainer) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.contentVisibility = 'auto';
+                    }
+                });
+            }, { rootMargin: '200px' });
+            observer.observe(this.resultsContainer);
         }
     }
 

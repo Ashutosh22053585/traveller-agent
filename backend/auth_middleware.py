@@ -3,6 +3,8 @@ import firebase_admin
 from firebase_admin import auth, credentials
 from flask import request, jsonify, _request_ctx_stack
 from functools import wraps
+from datetime import datetime, timedelta
+from collections import defaultdict
 
 # Initialize Firebase Admin SDK
 # Expects firebase-service-account.json in the project root
@@ -21,6 +23,28 @@ class AuthError(Exception):
     def __init__(self, error, status_code):
         self.error = error
         self.status_code = status_code
+
+# ─── Rate Limiting ───────────────────────────────────────
+# Simple in-memory rate limiter. Use Redis in production!
+_rate_limit_store = defaultdict(list)
+RATE_LIMIT_WINDOW = 60  # seconds
+RATE_LIMIT_MAX_REQUESTS = 30  # requests per window
+
+def _is_rate_limited(client_id):
+    """Check if client has exceeded rate limit"""
+    now = datetime.now()
+    cutoff = now - timedelta(seconds=RATE_LIMIT_WINDOW)
+    
+    # Clean old timestamps
+    _rate_limit_store[client_id] = [
+        ts for ts in _rate_limit_store[client_id] if ts > cutoff
+    ]
+    
+    if len(_rate_limit_store[client_id]) >= RATE_LIMIT_MAX_REQUESTS:
+        return True
+    
+    _rate_limit_store[client_id].append(now)
+    return False
 
 def get_token_auth_header():
     """Obtains the Access Token from the Authorization Header"""
@@ -49,10 +73,18 @@ def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         try:
+            # Rate limiting by client IP
+            client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+            if _is_rate_limited(client_ip):
+                raise AuthError({"code": "rate_limited",
+                               "description": "Too many requests. Please try again later."}, 429)
+            
             token = get_token_auth_header()
-            if token == "debug-token":
-                _request_ctx_stack.top.current_user = {"name": "Debug User", "email": "debug@terraagent.com", "uid": "debug-uid"}
-                return f(*args, **kwargs)
+            
+            # ⚠️ DEBUG TOKEN REMOVED - NO HARDCODED BYPASSES IN PRODUCTION
+            # if token == "debug-token":
+            #     _request_ctx_stack.top.current_user = {"name": "Debug User", ...}
+            #     return f(*args, **kwargs)
             
             try:
                 # Verify the ID token sent by the client
